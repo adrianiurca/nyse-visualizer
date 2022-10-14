@@ -31,6 +31,7 @@
   "homepage": "https://github.com/adrianiurca/nyse-visualizer#readme",
   "devDependencies": {
     "@types/axios": "^0.14.0",
+    "@types/cors": "^2.8.12",
     "@types/csvtojson": "^2.0.0",
     "@types/dotenv": "^8.2.0",
     "@types/ejs": "^3.1.1",
@@ -52,6 +53,7 @@
   },
   "dependencies": {
     "axios": "^1.1.2",
+    "cors": "^2.8.5",
     "csvtojson": "^2.0.10",
     "dotenv": "^16.0.3",
     "ejs": "^3.1.8",

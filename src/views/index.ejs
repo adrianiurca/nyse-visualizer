@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NYSE visualizer</title>
+    <%- include('_metatags.ejs') %>
+    <%- include('_stylesheets.ejs') %>
+    <%- include('_javascript.ejs') %>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="module">
+            import http from 'https://cdn.skypack.dev/@easytool/http'
+
+            const selectStocksDom = (stocks) => {
+              return `
+              <div class="input-field col s12">
+                <select id="selectStocks">
+                <option value="" disabled selected>Choose Company</option>
+                ${stocks.map(stock => `<option value="${stock.symbol}">${stock.symbol}</option>`).join()}
+                </select>
+              </div>
+              `
+            }
+
+            const togglePredictionDom = (stock) => {
+              return `<div class="switch">
+                  <label>
+                    Generate Prediction for ${stock}
+                    <input type="checkbox" data-toggle="toggle" id="togglePrediction">
+                    <span class="lever"></span>
+                  </label>
+                </div>`
+            }
+
+            const loading = () => {
+              return `<center>
+                <div class="preloader-wrapper big active">
+                  <div class="spinner-layer spinner-blue-only">
+                    <div class="circle-clipper left">
+                      <div class="circle"></div>
+                    </div><div class="gap-patch">
+                      <div class="circle"></div>
+                    </div><div class="circle-clipper right">
+                      <div class="circle"></div>
+                    </div>
+                  </div>
+                </div></center>
+              `
+            }
+
+            const buildChart = (divId, dataset) => {
+              google.charts.load('current', {'packages':['corechart']});
+              const chartDiv = document.getElementById(divId)
+              chartDiv.innerHTML = `<div id="childChartDiv-${divId}"></div>`
+              chartDiv.innerHTML += `<div id="childChartDivDownload-${divId}"></div>`
+              const drawChart = () => {
+                // Create the data table.
+                const data = new google.visualization.arrayToDataTable([
+                  dataset.column_names,
+                  ...dataset.data
+                ])
+                // Set chart options
+                const options = {
+                  title: dataset.name,
+                  hAxis: { title: dataset.column_names[0] },
+                  vAxis: { title: dataset.column_names[1] },
+                  legend: 'none'
+                }
+                const chart = new google.visualization.LineChart(document.getElementById(`childChartDiv-${divId}`))
+                // Instantiate and draw our chart, passing in some options.
+                google.visualization.events.addListener(chart, 'ready', () => {
+                  const imgUri = chart.getImageURI()
+                  const downloadDiv = document.getElementById(`childChartDivDownload-${divId}`)
+                  downloadDiv.innerHTML = `<a class="btn light-blue accent-3" href="${imgUri}" download><i class="material-icons left light-blue accent-3">file_download</i>Download this chart</a>`
+                })
+                chart.draw(data, options)
+              }
+              google.charts.setOnLoadCallback(drawChart)
+            }
+
+            window.onload = async() => {
+              const selectParentDiv = document.getElementById('selectParentDiv')
+              const startDate = document.getElementById('startDate')
+              const endDate = document.getElementById('endDate')
+              const generatePartialChart = document.getElementById('generatePartialChart')
+              const predictionToggle = document.getElementById('predictionToggle')
+              selectParentDiv.innerHTML = loading('big')
+              http({
+                baseURL: 'http://localhost:3000/v1',
+                url: '/stocks',
+                afterResponse(resolve, reject, response) {
+                  const { data, status } = response
+                  if(status == 200) {
+                    return resolve(data)
+                  }
+                  return reject(response)
+                },
+                onError(errorObject) {
+                  M.toast({ html: errorObject.response.data })
+                }
+              }).then(response => {
+                const stocks = response
+                selectParentDiv.innerHTML = selectStocksDom(stocks)
+                const selectDom = document.getElementById('selectStocks')
+                M.FormSelect.init(selectDom)
+                selectDom.addEventListener('change', async() => {
+                  const symbol = selectDom.value
+                  const dataset = (await http({
+                    baseURL: 'http://localhost:3000/v1',
+                    url: `/stocks/${symbol}`
+                  })).data
+                  M.Datepicker.init(startDate, {
+                    defaultDate: new Date(dataset.oldest_available_date),
+                    setDefaultDate: true,
+                    autoClose: true
+                  })
+                  M.Datepicker.init(endDate, {
+                    defaultDate: new Date(dataset.newest_available_date),
+                    setDefaultDate: true,
+                    autoClose: true
+                  })
+                  buildChart('fullChartParentDiv', dataset)
+                  predictionToggle.innerHTML = togglePredictionDom(dataset.name)
+                })
+                generatePartialChart.addEventListener('click', async() => {
+                  const startDateInstance = M.Datepicker.getInstance(startDate)
+                  const endDateInstance = M.Datepicker.getInstance(endDate)
+                  const changeFormat = (dateInput) => {
+                    const date = new Date(dateInput)
+                    const day = (date.getDate() >= 10) ? date.getDate() : `0${date.getDate()}`
+                    const month = (date.getMonth() + 1 >= 10) ? date.getMonth() + 1 : `0${date.getMonth() + 1}`
+                    const year = date.getFullYear()
+                    return `${year}-${month}-${day}`
+                  }
+                  const startDateFormatted = changeFormat(startDateInstance.toString())
+                  const endDateFormatted = changeFormat(endDateInstance.toString())
+                  const symbol = selectDom.value
+                  const dataset = (await http({
+                    baseURL: 'http://localhost:3000/v1',
+                    url: `/stocks/${symbol}/${startDateFormatted}/${endDateFormatted}`
+                  })).data
+                  buildChart('partialChartParentDiv', dataset)
+                })
+                predictionToggle.addEventListener('click', async() => {
+                  const symbol = selectDom.value
+                  const dataset = (await http({
+                    baseURL: 'http://localhost:3000/v1',
+                    url: `/stocks/${symbol}/prediction`
+                  })).data
+                  buildChart('predictionParentDiv', dataset)
+                })
+              }).catch(error => console.log(error))
+            }
+        </script>
+</head>
+<body>
+    <header>
+        
+    </header>
+    <main>
+        <div class="container">
+            <h1 class="header">NYSE visualizer</h1>
+            Data fetch from Quandl and displayed using google charts<br />
+            <div class="divider"></div>
+            <div class="section" id="mainSection">
+              <div id="selectParentDiv"></div>
+              <div id="fullChartParentDiv"></div>
+              <div id="rangeDateParentDiv">
+                <input type="text" class="datepicker" id="startDate">
+                <input type="text" class="datepicker" id="endDate">
+                <button class="btn light-blue accent-3" id="generatePartialChart">Generate Partial Chart</button>
+              </div>
+              <div id="partialChartParentDiv"></div>
+              <div id="predictionToggle"></div>
+              <div id="predictionParentDiv"></div>
+            </div>
+        </div>
+    </main>
+    <%- include('_footer.ejs') %>
+</body>
+</html>

@@ -5,7 +5,7 @@ import routes from "./routes"
 import path from 'path'
 import { sequelize } from './sequelize'
 import { Stock } from './models/Stock'
-import Cors from 'cors'
+// import Cors from 'cors'
 
 (async() => {
   await sequelize.sync({ force: true })
@@ -20,7 +20,7 @@ import Cors from 'cors'
   app.use('/static', express.static(path.join(__dirname, 'public')))
   app.use(express.json())
   app.use(routes)
-  app.use(Cors())
+  // app.use(Cors())
 
   const stocksFromDB = await Stock.findAll()
   if(stocksFromDB.length === 0) {

@@ -84,7 +84,7 @@
               const predictionToggle = document.getElementById('predictionToggle')
               selectParentDiv.innerHTML = loading('big')
               http({
-                baseURL: 'http://localhost:3000/v1',
+                baseURL: '<%= baseURL %>/v1',
                 url: '/stocks',
                 afterResponse(resolve, reject, response) {
                   const { data, status } = response
@@ -104,7 +104,7 @@
                 selectDom.addEventListener('change', async() => {
                   const symbol = selectDom.value
                   const dataset = (await http({
-                    baseURL: 'http://localhost:3000/v1',
+                    baseURL: '<%= baseURL %>/v1',
                     url: `/stocks/${symbol}`
                   })).data
                   M.Datepicker.init(startDate, {
@@ -134,7 +134,7 @@
                   const endDateFormatted = changeFormat(endDateInstance.toString())
                   const symbol = selectDom.value
                   const dataset = (await http({
-                    baseURL: 'http://localhost:3000/v1',
+                    baseURL: '<%= baseURL %>/v1',
                     url: `/stocks/${symbol}/${startDateFormatted}/${endDateFormatted}`
                   })).data
                   buildChart('partialChartParentDiv', dataset)
@@ -142,7 +142,7 @@
                 predictionToggle.addEventListener('click', async() => {
                   const symbol = selectDom.value
                   const dataset = (await http({
-                    baseURL: 'http://localhost:3000/v1',
+                    baseURL: '<%= baseURL %>/v1',
                     url: `/stocks/${symbol}/prediction`
                   })).data
                   buildChart('predictionParentDiv', dataset)

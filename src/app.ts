@@ -1,6 +1,5 @@
 import express from "express"
 import dotenv from "dotenv"
-import Quandl from "./lib/quandl"
 import { StockCSV, getStockList } from "./lib/stock_list_json"
 import routes from "./routes"
 import path from 'path'
@@ -33,12 +32,8 @@ import { Stock } from './models/Stock'
   }
 
   app.get('/', async (_req, res) => {
-    const quandl = await Quandl.build('AAPL')
-    const dataset = quandl.getDataset()
     res.render('index', {
-      columns: dataset.column_names,
-      data: dataset.data.map((arr: number[]) => `[${arr.map(x => (typeof x === 'string')? `'${x}'` : x).join(',')}]`),
-      name: dataset.name
+      baseURL: `http://localhost:${port}`
     })
   })
 

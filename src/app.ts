@@ -12,7 +12,7 @@ import { Stock } from './models/Stock'
 
   dotenv.config()
   const port = process.env.PORT || 3000
-  const hostname = process.env.HOSTNAME || 'http://localhost'
+  const hostname = process.env.HOSTNAME || `http://localhost:${port}`
   const app = express()
 
   app.set('views', path.join(__dirname, 'views'))
@@ -36,7 +36,7 @@ import { Stock } from './models/Stock'
 
   app.get('/', async (_req, res) => {
     res.render('index', {
-      baseURL: `${hostname}:${port}`
+      baseURL: hostname
     })
   })
 

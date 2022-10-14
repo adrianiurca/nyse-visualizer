@@ -11,7 +11,7 @@ import { Stock } from './models/Stock'
   await sequelize.sync({ force: true })
 
   dotenv.config()
-  const port = process.env.SERVER_PORT || 3000
+  const port = process.env.PORT || 3000
   const app = express()
 
   app.set('views', path.join(__dirname, 'views'))
